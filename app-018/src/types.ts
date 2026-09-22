@@ -65,10 +65,11 @@ export const ROLE_INFO: Record<LampRole, { name: string; color: string; shape: '
 
 export const ROLE_ORDER: LampRole[] = ['key', 'fill', 'rim', 'bg'];
 
-export const MODIFIER_INFO: Record<ModifierType, { name: string; beamDeg: number }> = {
-  softbox: { name: '柔光箱', beamDeg: 60 },
-  umbrella: { name: '反光伞', beamDeg: 75 },
-  beauty: { name: '雷达罩', beamDeg: 45 },
-  bare: { name: '裸灯', beamDeg: 55 },
-  flag: { name: '旗板', beamDeg: 25 },
+// defaultW/defaultH：切换到该配件时取用的标准尺寸（米），工厂默认值与参数面板下拉共用这一处
+export const MODIFIER_INFO: Record<ModifierType, { name: string; beamDeg: number; defaultW: number; defaultH: number }> = {
+  softbox: { name: '柔光箱', beamDeg: 60, defaultW: 0.6, defaultH: 0.9 }, // 60×90 方形柔光箱
+  umbrella: { name: '反光伞', beamDeg: 75, defaultW: 1.05, defaultH: 1.05 }, // φ105 圆伞
+  beauty: { name: '雷达罩', beamDeg: 45, defaultW: 0.55, defaultH: 0.55 }, // φ55 美人碟
+  bare: { name: '裸灯', beamDeg: 55, defaultW: 0.2, defaultH: 0.2 }, // φ20 标准罩
+  flag: { name: '旗板', beamDeg: 25, defaultW: 0.5, defaultH: 0.5 },
 };

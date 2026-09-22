@@ -1,10 +1,16 @@
 // 元素工厂与默认场景
 import type { Lamp, LampRole, ModifierType, PowerStep, Prop, PropKind, Scene } from '../types';
+import { MODIFIER_INFO } from '../types';
 
 let seq = 0;
 export function uid(prefix: string): string {
   seq += 1;
   return `${prefix}_${Date.now().toString(36)}${seq.toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
+}
+
+/** 切换配件时取用的标准尺寸（与 MODIFIER_INFO 同源） */
+export function defaultModifierDims(type: ModifierType): { w: number; h: number } {
+  return { w: MODIFIER_INFO[type].defaultW, h: MODIFIER_INFO[type].defaultH };
 }
 
 export interface NewLampOptions {
@@ -19,7 +25,7 @@ export interface NewLampOptions {
 export function newLamp(x: number, y: number, opts: NewLampOptions = {}): Lamp {
   const role = opts.role ?? 'key';
   const kind = opts.kind ?? 'strobe';
-  const modifier = opts.modifier ?? { type: 'softbox', w: 0.6, h: 0.9 };
+  const modifier = opts.modifier ?? { type: 'softbox', ...defaultModifierDims('softbox') };
   return {
     id: uid('lamp'),
     kind,
