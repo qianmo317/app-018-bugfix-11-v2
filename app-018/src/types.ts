@@ -72,3 +72,12 @@ export const MODIFIER_INFO: Record<ModifierType, { name: string; beamDeg: number
   bare: { name: '裸灯', beamDeg: 55 },
   flag: { name: '旗板', beamDeg: 25 },
 };
+
+/** 各配件默认尺寸（米）：新建灯与参数面板换配件共用同一套；圆形配件（伞/雷达罩/标准罩）w = h */
+export const MODIFIER_DEFAULT_SIZE: Record<ModifierType, { w: number; h: number }> = {
+  softbox: { w: 0.6, h: 0.9 }, // 60×90cm 竖箱（与模板/工厂默认一致）
+  umbrella: { w: 1.2, h: 1.2 }, // Φ1.2m 反光伞
+  beauty: { w: 0.55, h: 0.55 }, // Φ55cm 雷达罩（美人碟）
+  bare: { w: 0.2, h: 0.2 }, // 标准罩
+  flag: { w: 0.5, h: 0.5 },
+};

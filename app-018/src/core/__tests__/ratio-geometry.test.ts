@@ -5,7 +5,8 @@ import { azimuthDeg, norm180, relativeAngleToSubject, angleFromCameraAxis } from
 import { spotSize, uniformZone, lampCoverage, beamAngleOf } from '../coverage';
 import { reflectorLiftStops } from '../reflector';
 import { newLamp, newProp, newScene } from '../factory';
-import type { Scene } from '../../types';
+import { MODIFIER_DEFAULT_SIZE, MODIFIER_INFO } from '../../types';
+import type { ModifierType, Scene } from '../../types';
 
 /** 构造验收场景：主光 2m、辅光 3m、功率相同 */
 function ratioScene(mainDist: number, fillDist: number): Scene {
@@ -154,6 +155,23 @@ describe('覆盖范围（示意估算）', () => {
     const near = lampCoverage(lamp, 1.5);
     const far = lampCoverage(lamp, 3);
     expect(far.spot.w).toBeGreaterThan(near.spot.w);
+  });
+
+  it('配件默认尺寸单一数据源：新建灯默认 = MODIFIER_DEFAULT_SIZE.softbox', () => {
+    expect(newLamp(0, 0).modifier).toEqual({ type: 'softbox', ...MODIFIER_DEFAULT_SIZE.softbox });
+  });
+
+  it('每种配件都有默认尺寸；圆形配件（伞/雷达罩/标准罩）宽等于高', () => {
+    for (const type of Object.keys(MODIFIER_INFO) as ModifierType[]) {
+      const s = MODIFIER_DEFAULT_SIZE[type];
+      expect(s.w).toBeGreaterThan(0);
+      expect(s.h).toBeGreaterThan(0);
+    }
+    for (const round of ['umbrella', 'beauty', 'bare'] as const) {
+      expect(MODIFIER_DEFAULT_SIZE[round].w).toBe(MODIFIER_DEFAULT_SIZE[round].h);
+    }
+    // 竖柔光箱是唯一的矩形配件：宽≠高（光斑椭圆而非正圆）
+    expect(MODIFIER_DEFAULT_SIZE.softbox.w).not.toBe(MODIFIER_DEFAULT_SIZE.softbox.h);
   });
 });
 

@@ -132,6 +132,92 @@ test.describe('布光编辑器完整链路', () => {
   });
 });
 
+test.describe('参数面板接线回归', () => {
+  // 在参数面板某标签行内取输入框/下拉
+  const rowInput = (page: Page, panel: string, label: string) =>
+    page.getByTestId(panel).locator('label', { hasText: label }).locator('input');
+  const rowSelect = (page: Page, panel: string, label: string) =>
+    page.getByTestId(panel).locator('label', { hasText: label }).locator('select');
+
+  test('换配件：宽高套用该配件默认尺寸，且不再恒等', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('new-plan').click();
+    await page.getByTestId('add-lamp-key').click();
+    await expect(page.getByTestId('lamp-params')).toBeVisible();
+
+    const modSelect = rowSelect(page, 'lamp-params', '变光配件');
+    const w = rowInput(page, 'lamp-params', '配件宽');
+    const h = rowInput(page, 'lamp-params', '配件高');
+
+    // 新建灯默认柔光箱 0.6×0.9（与工厂/模板一致）
+    await expect(w).toHaveValue('0.6');
+    await expect(h).toHaveValue('0.9');
+
+    await modSelect.selectOption('beauty'); // 雷达罩（美人碟）：圆形 Φ0.55
+    await expect(w).toHaveValue('0.55');
+    await expect(h).toHaveValue('0.55');
+
+    await modSelect.selectOption('bare'); // 标准罩 0.2×0.2
+    await expect(w).toHaveValue('0.2');
+    await expect(h).toHaveValue('0.2');
+
+    await modSelect.selectOption('softbox'); // 回到柔光箱：0.6×0.9，宽≠高
+    await expect(w).toHaveValue('0.6');
+    await expect(h).toHaveValue('0.9');
+  });
+
+  test('持续灯：光通量与功率互斥，填一个清空另一个', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('new-plan').click();
+    await page.getByTestId('add-lamp-key').click();
+    await rowSelect(page, 'lamp-params', '类型').selectOption('continuous');
+
+    const lumens = page.getByTestId('lumens-input');
+    const watts = page.getByTestId('watts-input');
+    await expect(lumens).toHaveValue('10000'); // 切换类型给默认光通量
+    await expect(watts).toHaveValue('');
+
+    await watts.fill('150'); // 填功率 → 光通量清空
+    await expect(lumens).toHaveValue('');
+    await expect(watts).toHaveValue('150');
+
+    await lumens.fill('8000'); // 填光通量 → 功率清空
+    await expect(lumens).toHaveValue('8000');
+    await expect(watts).toHaveValue('');
+  });
+
+  test('道具面板：宽/厚、X/Y 各管各的', async ({ page }) => {
+    await page.goto('/');
+    await page.getByTestId('new-plan').click();
+    await page.getByRole('button', { name: '反光板', exact: true }).click();
+    await expect(page.getByTestId('prop-params')).toBeVisible();
+
+    const w = rowInput(page, 'prop-params', '宽');
+    const h = rowInput(page, 'prop-params', '厚');
+    const x = rowInput(page, 'prop-params', 'X');
+    const y = rowInput(page, 'prop-params', 'Y');
+    await expect(w).toHaveValue('1');
+    await expect(h).toHaveValue('0.12');
+
+    await w.fill('2'); // 改宽只动宽
+    await expect(w).toHaveValue('2');
+    await expect(h).toHaveValue('0.12');
+    await h.fill('0.2'); // 改厚只动厚
+    await expect(h).toHaveValue('0.2');
+    await expect(w).toHaveValue('2');
+
+    await x.fill('4.2'); // 改 X 只动 X
+    await expect(x).toHaveValue('4.2');
+    await expect(y).toHaveValue('2');
+    const tr = await page.locator('[data-el="prop"]').getAttribute('transform');
+    expect(tr).toContain('translate(4.2 2)');
+    await y.fill('3.4'); // 改 Y 只动 Y
+    await expect(x).toHaveValue('4.2');
+    const tr2 = await page.locator('[data-el="prop"]').getAttribute('transform');
+    expect(tr2).toContain('translate(4.2 3.4)');
+  });
+});
+
 test.describe('设置与打印', () => {
   test('设置页切换单位为英尺，画布徽标更新', async ({ page }) => {
     await openEditorFromTemplate(page, 'tpl-butterfly');

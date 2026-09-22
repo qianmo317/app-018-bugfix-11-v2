@@ -1,5 +1,6 @@
 // 元素工厂与默认场景
 import type { Lamp, LampRole, ModifierType, PowerStep, Prop, PropKind, Scene } from '../types';
+import { MODIFIER_DEFAULT_SIZE } from '../types';
 
 let seq = 0;
 export function uid(prefix: string): string {
@@ -19,7 +20,7 @@ export interface NewLampOptions {
 export function newLamp(x: number, y: number, opts: NewLampOptions = {}): Lamp {
   const role = opts.role ?? 'key';
   const kind = opts.kind ?? 'strobe';
-  const modifier = opts.modifier ?? { type: 'softbox', w: 0.6, h: 0.9 };
+  const modifier = opts.modifier ?? { type: 'softbox', ...MODIFIER_DEFAULT_SIZE.softbox };
   return {
     id: uid('lamp'),
     kind,

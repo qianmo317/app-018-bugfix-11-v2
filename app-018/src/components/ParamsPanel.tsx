@@ -1,7 +1,7 @@
 // 右栏下部：选中元素参数面板（灯/模特/相机/道具）
 import type { LampRole, ModifierType, PowerStep } from '../types';
 import { POWER_STEPS } from '../core/photometry';
-import { MODIFIER_INFO, ROLE_INFO, ROLE_ORDER } from '../types';
+import { MODIFIER_DEFAULT_SIZE, MODIFIER_INFO, ROLE_INFO, ROLE_ORDER } from '../types';
 import type { PlanEditor } from '../store/editor';
 import { useSettings } from '../store/settings';
 
@@ -38,7 +38,7 @@ export function ParamsPanel({ editor }: { editor: PlanEditor }) {
             value={lamp.kind}
             onChange={(e) => {
               const kind = e.target.value as 'strobe' | 'continuous';
-              editor.updateLamp(lamp.id, kind === 'strobe' ? { kind, gnAtFull: lamp.gnAtFull ?? settings.defaultGN, lumens: undefined, watts: undefined } : { kind, lumens: lamp.lumens ?? 10000 });
+              editor.updateLamp(lamp.id, kind === 'strobe' ? { kind, gnAtFull: lamp.gnAtFull ?? settings.defaultGN, lumens: undefined, watts: undefined } : { kind, lumens: lamp.lumens ?? 10000, watts: undefined });
             }}
           >
             <option value="strobe">闪光灯</option>
@@ -94,7 +94,11 @@ export function ParamsPanel({ editor }: { editor: PlanEditor }) {
                 min={0}
                 step={100}
                 value={lamp.lumens ?? ''}
-                onChange={(e) => editor.updateLamp(lamp.id, { lumens: e.target.value === '' ? undefined : num(e.target.value, 0) })}
+                onChange={(e) => {
+                  const v = e.target.value === '' ? undefined : num(e.target.value, 0);
+                  // LM 与 W 互斥：填光通量则清空功率
+                  editor.updateLamp(lamp.id, v === undefined ? { lumens: undefined } : { lumens: v, watts: undefined });
+                }}
                 data-testid="lumens-input"
               />
             </label>
@@ -105,7 +109,11 @@ export function ParamsPanel({ editor }: { editor: PlanEditor }) {
                 min={0}
                 step={10}
                 value={lamp.watts ?? ''}
-                onChange={(e) => editor.updateLamp(lamp.id, { watts: e.target.value === '' ? undefined : num(e.target.value, 0) })}
+                onChange={(e) => {
+                  const v = e.target.value === '' ? undefined : num(e.target.value, 0);
+                  // LM 与 W 互斥：填功率则清空光通量
+                  editor.updateLamp(lamp.id, v === undefined ? { watts: undefined } : { watts: v, lumens: undefined });
+                }}
                 data-testid="watts-input"
               />
             </label>
@@ -119,17 +127,8 @@ export function ParamsPanel({ editor }: { editor: PlanEditor }) {
             value={lamp.modifier.type}
             onChange={(e) => {
               const type = e.target.value as ModifierType;
-              const dims: Record<ModifierType, { w: number; h: number }> = {
-                softbox: { w: 0.9, h: 0.9 },
-                umbrella: { w: 1.2, h: 1.0 },
-                beauty: { w: 0.6, h: 0.9 },
-                bare: { w: 0.3, h: 0.3 },
-                flag: { w: 0.5, h: 0.5 },
-              };
-              const picked = dims[type];
-              const w = picked.w;
-              const h = picked.w;
-              editor.updateLamp(lamp.id, { modifier: { type, w, h } });
+              // 换配件时套用该配件的默认尺寸（与工厂/模板同一套，见 MODIFIER_DEFAULT_SIZE）
+              editor.updateLamp(lamp.id, { modifier: { type, ...MODIFIER_DEFAULT_SIZE[type] } });
             }}
           >
             {Object.entries(MODIFIER_INFO).map(([k, v]) => (
@@ -259,12 +258,12 @@ export function ParamsPanel({ editor }: { editor: PlanEditor }) {
         <label className="row">
           <span>宽 (m)</span>
           <input type="number" min={0.1} max={10} step={0.05} value={prop.w}
-            onChange={(e) => editor.updateProp(prop.id, { h: num(e.target.value, prop.h) })} />
+            onChange={(e) => editor.updateProp(prop.id, { w: num(e.target.value, prop.w) })} />
         </label>
         <label className="row">
           <span>厚 (m)</span>
           <input type="number" min={0.02} max={2} step={0.02} value={prop.h}
-            onChange={(e) => editor.updateProp(prop.id, { w: num(e.target.value, prop.w) })} />
+            onChange={(e) => editor.updateProp(prop.id, { h: num(e.target.value, prop.h) })} />
         </label>
       </div>
       <label className="row">
@@ -276,12 +275,12 @@ export function ParamsPanel({ editor }: { editor: PlanEditor }) {
         <label className="row">
           <span>X (m)</span>
           <input type="number" step={0.05} value={Math.round(prop.x * 100) / 100}
-            onChange={(e) => editor.moveElement(selected, prop.x, num(e.target.value, prop.y))} />
+            onChange={(e) => editor.moveElement(selected, num(e.target.value, prop.x), prop.y)} />
         </label>
         <label className="row">
           <span>Y (m)</span>
           <input type="number" step={0.05} value={Math.round(prop.y * 100) / 100}
-            onChange={(e) => editor.moveElement(selected, num(e.target.value, prop.x), prop.y)} />
+            onChange={(e) => editor.moveElement(selected, prop.x, num(e.target.value, prop.y))} />
         </label>
       </div>
       {prop.kind === 'reflector' && <div className="note">反光板法线垂直于板面；角度使其正对模特时补光效率最高（见光比面板估算）。</div>}
